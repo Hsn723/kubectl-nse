@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	// CurrentVersion holds the version number of kubectl-nse, set at build time
 	CurrentVersion string
 	versionCmd     = &cobra.Command{
 		Use:   "version",
