@@ -177,6 +177,7 @@ func getContainerInfo(pod v1.Pod) (id string, runtime string, err error) {
 	return
 }
 
+// Execute runs the root command
 func Execute() error {
 	return rootCmd.Execute()
 }
