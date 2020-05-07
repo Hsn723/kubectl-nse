@@ -1,0 +1,72 @@
+version: 2.1
+executors:
+  golang:
+    docker:
+      - image: quay.io/cybozu/golang:1.13-bionic
+jobs:
+  lint:
+    executor: golang
+    steps:
+      - checkout
+      - run: make lint
+  test:
+    executor: golang
+    steps:
+      - checkout
+      - run: make test
+  build:
+    executor: golang
+    working_directory: /work
+    parameters:
+      os:
+        type: string
+      arch:
+        type: string
+    steps:
+      - checkout
+      - run: make OS=<< parameters.os >> ARCH=<< parameters.arch >> build
+      - persist_to_workspace:
+          root: /work
+          paths:
+            - artifacts/*
+  test-kind:
+    executor: golang
+    steps:
+      - run: echo "TODO"
+  release:
+    executor: golang
+    working_directory: /work
+    steps:
+      - attach_workspace:
+          at: /work
+      - run: go get github.com/tcnksm/ghr
+      - run: ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./artifacts
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - lint
+      - test
+      - build:
+          matrix:
+            parameters:
+              os: [linux, darwin, windows]
+              arch: [amd64]
+          requires:
+            - lint
+            - test
+      - test-kind:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
+      - release:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/

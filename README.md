@@ -1,3 +1,6 @@
+[![CircleCI](https://circleci.com/gh/Hsn723/kubectl-nse.svg?style=svg&circle-token=25e7f76a28bc51caa424e04161cea2a2b4543d08)](https://circleci.com/gh/Hsn723/kubectl-nse) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/hsn723/kubectl-nse) [![](https://godoc.org/github.com/Hsn723/kubectl-nse?status.svg)](http://godoc.org/github.com/Hsn723/kubectl-nse)
+ [![Go Report Card](https://goreportcard.com/badge/github.com/Hsn723/kubectl-nse)](https://goreportcard.com/report/github.com/Hsn723/kubectl-nse)
+
 # kubectl-nse
 A convenience `kubectl` plugin to execute `nsenter` against a Pod's container.
 
@@ -22,4 +25,4 @@ Flags:
 ```
 
 ## Installation
-Use the binary directly or copy it to a location inside `$PATH` to use with `kubectl`. Binary releases will one day be uploaded.
+Compile using `make build` or download the binary for your platform from the [releases](https://github.com/Hsn723/kubectl-nse/releases), renaming it accordingly. Then, use the binary directly or copy it to a location inside `$PATH` to use with `kubectl`.
