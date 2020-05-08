@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Hsn723/kubectl-nse/common"
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 )
@@ -82,6 +83,10 @@ func runRoot(cmd *cobra.Command, args []string) (err error) {
 	if err != nil {
 		return
 	}
+	if pid == "0" {
+		err = errors.New("a container was found but with a PID of 0, this usually means it is not running")
+		return
+	}
 	cmd.Println("Got PID " + pid)
 	return rc.Enter(pid, nsArgs)
 }
@@ -127,48 +132,93 @@ func getPodBySelector() (pod v1.Pod, err error) {
 		pod = podList.Items[0]
 		return
 	}
-	if nodeName == "" {
-		err = errors.New("a node name must be provided when there are multiple pods matching a selector")
-		return
-	}
-	var matchingPods []v1.Pod
-	for _, p := range podList.Items {
-		if p.Spec.NodeName == nodeName {
-			matchingPods = append(matchingPods, p)
+	if nodeName != "" {
+		var matchingPods []v1.Pod
+		for _, p := range podList.Items {
+			if p.Spec.NodeName == nodeName {
+				matchingPods = append(matchingPods, p)
+			}
 		}
+		if len(matchingPods) == 0 {
+			err = errors.New("no matching pod has been found on the given node")
+			return
+		}
+		if len(matchingPods) == 1 {
+			pod = matchingPods[0]
+			return
+		}
+		return selectPod(matchingPods)
 	}
-	switch l := len(matchingPods); l {
-	case 0:
-		err = errors.New("no matching pod has been found on the given node")
-		return
-	case 1:
-		pod = matchingPods[0]
-		return
-	default:
-		err = errors.New("multiple pods were found on the given node. Please retry by specifying the pod name")
-		return
-	}
+
+	return selectPod(podList.Items)
 }
 
-func getContainerInfo(pod v1.Pod) (id string, runtime string, err error) {
-	containers := pod.Status.ContainerStatuses
-	if len(containers) > 1 && containerName == "" {
-		err = errors.New("this pod has more than one container running. Specify container with -c")
+func selectPod(podList []v1.Pod) (pod v1.Pod, err error) {
+	var podChoices []string
+	for _, p := range podList {
+		podChoices = append(podChoices, p.Name)
+	}
+	prompt := promptui.Select{
+		Label: "Multiple pods were matched, please select one:",
+		Items: podChoices,
+	}
+	_, podName, err := prompt.Run()
+	if err != nil {
 		return
 	}
-	var containerID string
+	for _, p := range podList {
+		if p.Name == podName {
+			pod = p
+			return
+		}
+	}
+	err = errors.New("no matching pod has been found")
+	return
+}
+
+func getContainerID(containers []v1.ContainerStatus) (containerID string, err error) {
 	if len(containers) == 1 {
-		containerID = containers[0].ContainerID
-	} else {
+		container := containers[0]
+		if containerName != "" && container.Name != containerName {
+			err = errors.New("found a container, but it does not match the requested container name")
+			return
+		}
+		containerID = container.ContainerID
+		return
+	}
+	if containerName == "" {
+		var choices []string
 		for _, c := range containers {
-			if c.Name == containerName {
-				containerID = c.ContainerID
-				break
-			}
+			choices = append(choices, c.Name)
+		}
+		prompt := promptui.Select{
+			Label: "Multiple containers were found, please select one:",
+			Items: choices,
+		}
+		_, cn, e := prompt.Run()
+		if e != nil {
+			err = e
+			return
+		}
+		containerName = cn
+	}
+	for _, c := range containers {
+		if c.Name == containerName {
+			containerID = c.ContainerID
+			break
 		}
 	}
 	if containerID == "" {
 		err = errors.New("could not find a matching container")
+		return
+	}
+	return
+}
+
+func getContainerInfo(pod v1.Pod) (id string, runtime string, err error) {
+	containers := pod.Status.ContainerStatuses
+	containerID, err := getContainerID(containers)
+	if err != nil {
 		return
 	}
 	containerInfoParts := strings.Split(containerID, "://")
