@@ -33,6 +33,24 @@ jobs:
     executor: golang
     steps:
       - run: echo "TODO"
+  create-tag:
+    executor: golang
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "ef:bb:b1:67:e0:69:82:54:ec:53:6a:fb:40:0d:47:bb"
+      - checkout
+      - run:
+          command: |
+            TAG=v$(cat VERSION)
+            if git show-ref --tags | grep -q "refs/tags/${TAG}$"
+            then
+              echo "Already released version, skip"
+              exit
+            else
+              git tag ${TAG}
+              git push git@github.com:${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git ${TAG}
+            fi
   release:
     executor: golang
     working_directory: /work
@@ -59,6 +77,12 @@ workflows:
       - test-kind:
           requires:
             - build
+          filters:
+            branches:
+              only: master
+      - tag-release:
+          requires:
+            - test-kind
           filters:
             branches:
               only: master
