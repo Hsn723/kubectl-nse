@@ -80,7 +80,7 @@ workflows:
           filters:
             branches:
               only: master
-      - tag-release:
+      - create-tag:
           requires:
             - test-kind
           filters:
