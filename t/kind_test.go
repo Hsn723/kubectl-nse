@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,6 +20,8 @@ var commonArgs = []string{
 }
 
 var _ = BeforeSuite(func() {
+	SetDefaultEventuallyPollingInterval(time.Second)
+	SetDefaultEventuallyTimeout(5 * time.Minute)
 	fmt.Println("Setting up additional pods")
 	_, _, err := Exec("kubectl", "apply", "-f", "kind/test-pods.yaml")
 	Expect(err).NotTo(HaveOccurred())
