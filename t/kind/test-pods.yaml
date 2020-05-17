@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multiple-pods-same-node
+  labels:
+    test: multiple-pods-same-node
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      test: multiple-pods-same-node
+  template:
+    metadata:
+      labels:
+        test: multiple-pods-same-node
+    spec:
+      containers:
+      - name: busybox
+        image: busybox:1.28
+        command: [ "/bin/sh", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+      nodeSelector:
+        kubernetes.io/hostname: kind-worker
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: single-pod-multiple-containers
+  labels:
+    test: single-pod-multiple-containers
+spec:
+  containers:
+  - name: busybox-1
+    image: busybox:1.28
+    command: [ "/bin/sh", "-c", "--" ]
+    args: [ "while true; do sleep 30; done;" ]
+  - name: busybox-2
+    image: busybox:1.28
+    command: [ "/bin/sh", "-c", "--" ]
+    args: [ "while true; do sleep 30; done;" ]
+  nodeSelector:
+    kubernetes.io/hostname: kind-worker

@@ -30,9 +30,23 @@ jobs:
           paths:
             - artifacts/*
   test-kind:
-    executor: golang
+    machine:
+      image: ubuntu-1604:201903-01
+    environment:
+      GOPATH: /home/circleci/.go_workspace
     steps:
-      - run: echo "TODO"
+      - checkout
+      - run:
+          command: |
+            sudo rm -rf /usr/local/go
+            GO_VERSION=1.13.11
+            curl -fsL https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz | sudo tar xzf - -C /usr/local
+      - run:
+          command: |
+            sudo curl -sLf https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+            sudo chmod +x /usr/local/bin/kubectl
+      - run: make build
+      - run: make kindtest
   create-tag:
     executor: golang
     steps:
@@ -66,20 +80,10 @@ workflows:
     jobs:
       - lint
       - test
-      - build:
-          matrix:
-            parameters:
-              os: [linux]
-              arch: [amd64]
+      - test-kind:
           requires:
             - lint
             - test
-      - test-kind:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
       - create-tag:
           requires:
             - test-kind

@@ -16,13 +16,14 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "kubectl nse",
 		Short: "kubectl-nse allows to run a command in a pod's container using nsenter",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.ArbitraryArgs,
 		RunE:  runRoot,
 	}
 	namespace     string
 	nsArgs        string
 	containerName string
 	nodeName      string
+	podName       string
 	selector      string
 	isKind        bool
 	withSudo      bool
@@ -33,6 +34,7 @@ func init() {
 	rootCmd.Flags().StringVar(&nsArgs, "nsargs", nsArgs, "quoted options to pass to nsenter")
 	rootCmd.Flags().StringVarP(&containerName, "container", "c", containerName, "specify container name for pods with multiple containers")
 	rootCmd.Flags().StringVar(&nodeName, "node", nodeName, "specify node to which the pod belongs")
+	rootCmd.Flags().StringVarP(&podName, "pod", "p", podName, "specify a pod by name")
 	rootCmd.Flags().StringVarP(&selector, "selector", "l", selector, "selector to filter on")
 	rootCmd.Flags().BoolVar(&isKind, "kind", isKind, "the target cluster is a kind cluster")
 	rootCmd.Flags().BoolVar(&withSudo, "sudo", withSudo, "execute commands on the remote host with sudo")
@@ -40,14 +42,14 @@ func init() {
 
 func runRoot(cmd *cobra.Command, args []string) (err error) {
 	var pod v1.Pod
-	if len(args) < 1 {
+	if podName == "" {
 		if selector == "" {
 			err = errors.New("a selector must be provided when no pod name is provided")
 			return
 		}
 		pod, err = getPodBySelector()
 	} else {
-		pod, err = getPod(args[0])
+		pod, err = getPod()
 	}
 	if err != nil {
 		return
@@ -88,7 +90,7 @@ func runRoot(cmd *cobra.Command, args []string) (err error) {
 		return
 	}
 	cmd.Println("Got PID " + pid)
-	return rc.Enter(pid, nsArgs)
+	return rc.Enter(pid, nsArgs, args)
 }
 
 func getPodBaseArgs() []string {
@@ -100,7 +102,7 @@ func getPodBaseArgs() []string {
 	return getPodArgs
 }
 
-func getPod(podName string) (pod v1.Pod, err error) {
+func getPod() (pod v1.Pod, err error) {
 	getPodArgs := getPodBaseArgs()
 	getPodArgs = append(getPodArgs, podName)
 	getPodCmd := exec.Command("kubectl", getPodArgs...)

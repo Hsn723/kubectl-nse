@@ -20,6 +20,7 @@ Flags:
   -n, --namespace string   specify namespace
       --node string        specify node to which the pod belongs
       --nsargs string      quoted options to pass to nsenter
+  -p, --pod string         specify a pod by name
   -l, --selector string    selector to filter on
       --sudo               execute commands on the remote host with sudo
 ```
