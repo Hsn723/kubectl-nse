@@ -128,6 +128,10 @@ func getPodBySelector() (pod v1.Pod, err error) {
 	if err != nil {
 		return
 	}
+	if len(podList.Items) == 0 {
+		err = errors.New("no matching pod has been found")
+		return
+	}
 	if len(podList.Items) == 1 {
 		pod = podList.Items[0]
 		return
