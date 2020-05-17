@@ -15,7 +15,7 @@ setup:
 	mkdir -p ${WORK_DIR} ${BUILD_DIR}
 
 lint: clean setup
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b ${WORK_DIR} v1.26.0
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b ${WORK_DIR} v1.27.0
 	${WORK_DIR}/golangci-lint run
 
 test: clean

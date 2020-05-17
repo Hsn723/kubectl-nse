@@ -1,0 +1,11 @@
+linters:
+  enable:
+    - golint
+    - gofmt
+    - goimports
+    - gosec
+issues:
+  exclude-rules:
+    - linters:
+        - gosec
+      text: "G204:"
