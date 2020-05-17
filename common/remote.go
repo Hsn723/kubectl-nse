@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // RemoteCmd wraps common parameters for running a command on a remote host
@@ -53,8 +54,11 @@ func (rc *RemoteCmd) GetPid(containerID, runtime string) (pid string, err error)
 }
 
 // Enter executes nsenter on the remote host
-func (rc *RemoteCmd) Enter(pid, nsArgs string) error {
+func (rc *RemoteCmd) Enter(pid, nsArgs string, command []string) error {
 	args := append(rc.PreArgsInteractive, "nsenter", "-t", pid, nsArgs)
+	if len(command) != 0 {
+		args = append(args, "sh", "-c", strings.Join(command, " "))
+	}
 	nsenterCmd := exec.Command(rc.Path, args...)
 	nsenterCmd.Stdout = os.Stdout
 	nsenterCmd.Stdin = os.Stdin
