@@ -69,18 +69,15 @@ func runRoot(cmd *cobra.Command, args []string) (err error) {
 	cmd.Println("Got container ID " + containerID)
 	var rc common.RemoteCmd
 	if isKind {
-		rc.Path = "docker"
-		rc.PreArgs = []string{"exec", "-t", nodeName}
-		rc.PreArgsInteractive = []string{"exec", "-it", nodeName}
+		rc.Command = []string{"docker", "exec", "-t"}
+		rc.InteractiveFlag = "-i"
 	} else {
-		rc.Path = "ssh"
-		rc.PreArgs = []string{"-ttq", nodeName}
-		rc.PreArgsInteractive = rc.PreArgs
+		rc.Command = []string{"ssh", "-ttq"}
 	}
 	if withSudo {
-		rc.PreArgs = append(rc.PreArgs, "sudo")
-		rc.PreArgsInteractive = append(rc.PreArgsInteractive, "sudo")
+		rc.Sudo = "sudo"
 	}
+	rc.NodeName = nodeName
 	pid, err := rc.GetPid(containerID, runtime)
 	if err != nil {
 		return
